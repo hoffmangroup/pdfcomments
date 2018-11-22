@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python
 
 from setuptools import setup
 
@@ -9,7 +9,10 @@ setup(name='pdfcomments',
       author_email='michael.hoffman@utoronto.ca',
       license='GPLv3',
       packages=['pdfcomments'],
-      entry_points = {
+      package_data={'pdfcomments': ['data/*']},
+      install_requires=['path.py>=11', 'setuptools>=24.2.0'],
+      python_requires='>=3.6',
+      entry_points={
         'console_scripts': ['pdfcomments=pdfcomments.__main__:main'],
       },
       zip_safe=False)

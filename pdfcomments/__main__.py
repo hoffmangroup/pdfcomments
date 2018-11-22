@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python
 """__init__.py: extract comments from PDF
 """
 
@@ -14,15 +14,18 @@ import sys
 from typing import List, Optional
 
 from path import Path
+from pkg_resources import resource_filename
 
 ENCODING = "utf-8"
-STYLESHEET_FILENAME = "comments.xsl"
+STYLESHEET_RESOURCENAME = "data/pdfcomments.xsl"
 OUT_EXT = "txt"
 
-re_text_encoded_xhtml_start = escape(r"&lt;?xml version='1.0'?&gt;&lt;body xmlns='http://www.w3.org/1999/xhtml' xmlns:xfa='http://www.xfa.org/schema/xfa-data/1.0/' xfa:APIVersion='Acrobat:10.1.2' xfa:spec='2.0.2'&gt;&lt;p dir='ltr' style='color: #ff0000'&gt;&lt;span&gt;")  # noqa
-re_text_encoded_xhtml_end = escape(r"&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;")
-re_encoded_xhtml = \
-    re_compile(f"{re_text_encoded_xhtml_start}(.*?){re_text_encoded_xhtml_end}", MULTILINE | DOTALL)
+pattern_encoded_xhtml_start = escape(r"&lt;?xml version='1.0'?&gt;&lt;body xmlns='http://www.w3.org/1999/xhtml' xmlns:xfa='http://www.xfa.org/schema/xfa-data/1.0/' xfa:APIVersion='Acrobat:10.1.2' xfa:spec='2.0.2'&gt;&lt;p dir='ltr' style='color: #ff0000'&gt;&lt;span&gt;")  # noqa
+pattern_encoded_xhtml_end = escape(r"&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;")
+
+pattern_encoded_xhtml = \
+    f"{pattern_encoded_xhtml_start}(.*?){pattern_encoded_xhtml_end}"
+re_encoded_xhtml = re_compile(pattern_encoded_xhtml, MULTILINE | DOTALL)
 
 re_squo = re_compile(r"&amp;[lr]squo;")
 re_dquo = re_compile(r"&amp;[lr]dquo;")
@@ -41,7 +44,8 @@ def pdfcomments(infilename: str, outfilename: str = None):
 
     bytes_clean = text_clean.encode(ENCODING)
 
-    run(["xsltproc", "-o", outfilename, STYLESHEET_FILENAME, "-"],
+    stylesheet_filename = resource_filename(__name__, STYLESHEET_RESOURCENAME)
+    run(["xsltproc", "-o", outfilename, stylesheet_filename, "-"],
         input=bytes_clean, check=True)
 
 
