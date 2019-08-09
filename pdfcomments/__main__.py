@@ -4,9 +4,10 @@
 
 __version__ = "0.1"
 
-# Copyright 2018 Michael M. Hoffman <michael.hoffman@utoronto.ca>
+# Copyright 2018, 2019 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
 from argparse import Namespace
+from collections import OrderedDict
 from os import extsep
 from re import compile as re_compile, DOTALL, escape, MULTILINE
 from subprocess import run
@@ -27,8 +28,10 @@ pattern_encoded_xhtml = \
     f"{pattern_encoded_xhtml_start}(.*?){pattern_encoded_xhtml_end}"
 re_encoded_xhtml = re_compile(pattern_encoded_xhtml, MULTILINE | DOTALL)
 
-re_squo = re_compile(r"&amp;[lr]squo;")
-re_dquo = re_compile(r"&amp;[lr]dquo;")
+REPLACEMENTS = OrderedDict([(r"&amp;[lr]squo;", "'"),
+                            (r"&amp;[lr]dquo;", '"'),
+                            (r"&amp;gt;", ">"),
+                            (r"&amp;lt;", "<")])
 
 
 def pdfcomments(infilename: str, outfilename: str = None):
@@ -39,8 +42,8 @@ def pdfcomments(infilename: str, outfilename: str = None):
         text = infile.read()
 
     text_clean = re_encoded_xhtml.sub(r"\1", text)
-    text_clean = re_squo.sub("'", text_clean)
-    text_clean = re_dquo.sub('"', text_clean)
+    for pattern, repl in REPLACEMENTS.items():
+        text_clean = re_compile(pattern).sub(repl, text_clean)
 
     bytes_clean = text_clean.encode(ENCODING)
 
