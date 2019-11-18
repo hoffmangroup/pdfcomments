@@ -9,25 +9,18 @@ __version__ = "0.1"
 from argparse import Namespace
 from collections import OrderedDict
 from os import extsep
-from re import compile as re_compile, DOTALL, escape, MULTILINE
-from subprocess import run
 import sys
 from typing import List, Optional
 
 from path import Path
-from pkg_resources import resource_filename
 
-ENCODING = "utf-8"
-STYLESHEET_RESOURCENAME = "data/pdfcomments.xsl"
+from PyPDF2 import PdfFileReader
+
+ENCODING = "utf-8"  # XXX: still used?
 OUT_EXT = "txt"
+STRICT = False
 
-pattern_encoded_xhtml_start = escape(r"&lt;?xml version='1.0'?&gt;&lt;body xmlns='http://www.w3.org/1999/xhtml' xmlns:xfa='http://www.xfa.org/schema/xfa-data/1.0/' xfa:APIVersion='Acrobat:10.1.2' xfa:spec='2.0.2'&gt;&lt;p dir='ltr' style='color: #ff0000'&gt;&lt;span&gt;")  # noqa
-pattern_encoded_xhtml_end = escape(r"&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;")
-
-pattern_encoded_xhtml = \
-    f"{pattern_encoded_xhtml_start}(.*?){pattern_encoded_xhtml_end}"
-re_encoded_xhtml = re_compile(pattern_encoded_xhtml, MULTILINE | DOTALL)
-
+# XXX: still used?
 REPLACEMENTS = OrderedDict([(r"&amp;[lr]squo;", "'"),
                             (r"&amp;[lr]dquo;", '"'),
                             (r"&amp;gt;", ">"),
@@ -38,18 +31,25 @@ def pdfcomments(infilename: str, outfilename: str = None):
     if outfilename is None:
         outfilename = extsep.join([Path(infilename).namebase, OUT_EXT])
 
-    with open(infilename) as infile:
-        text = infile.read()
+    reader = PdfFileReader(infilename, STRICT)
+    for page_num, page in enumerate(reader.pages):
+        page_text = f"p{page_num+1}:"
 
-    text_clean = re_encoded_xhtml.sub(r"\1", text)
-    for pattern, repl in REPLACEMENTS.items():
-        text_clean = re_compile(pattern).sub(repl, text_clean)
+        try:
+            annot_indirects = page["/Annots"]
+        except KeyError:
+            continue
 
-    bytes_clean = text_clean.encode(ENCODING)
+        for annot_indirect in annot_indirects:
+            annot = annot_indirect.getObject()
 
-    stylesheet_filename = resource_filename(__name__, STYLESHEET_RESOURCENAME)
-    run(["xsltproc", "-o", outfilename, stylesheet_filename, "-"],
-        input=bytes_clean, check=True)
+            try:
+                contents = annot["/Contents"]
+            except KeyError:
+                continue
+
+            print(page_text, contents)
+            # XXX: open outputfile, print there
 
 
 def parse_args(args: List[str]) -> Namespace:
@@ -57,7 +57,7 @@ def parse_args(args: List[str]) -> Namespace:
 
     description = __doc__.splitlines()[0].partition(": ")[2]
     parser = ArgumentParser(description=description)
-    parser.add_argument("infile", help="input file in xfdf format")
+    parser.add_argument("infile", help="input file in PDF format")
     parser.add_argument("outfile", nargs="?",
                         help="output file"
                         " (default: infile with extension changed to 'txt')")

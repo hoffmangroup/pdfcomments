@@ -10,7 +10,7 @@ setup(name='pdfcomments',
       license='GPLv3',
       packages=['pdfcomments'],
       package_data={'pdfcomments': ['data/*']},
-      install_requires=['path.py>=11', 'setuptools>=24.2.0'],
+      install_requires=['PyPDF2'],
       python_requires='>=3.6',
       entry_points={
         'console_scripts': ['pdfcomments=pdfcomments.__main__:main'],
