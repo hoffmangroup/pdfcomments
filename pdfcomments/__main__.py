@@ -7,34 +7,31 @@ __version__ = "0.1"
 # Copyright 2018, 2019 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
 from argparse import Namespace
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 from os import extsep
+import re
 import sys
-from typing import List, Optional
+from typing import DefaultDict, List, Optional
 
 from path import Path
 
 from PyPDF2 import PdfFileReader
 
-ENCODING = "utf-8"  # XXX: still used?
+# key: int (number of stars)
+# value: list of strs
+LevelsDict = DefaultDict[int, List[str]]
+
 OUT_EXT = "txt"
 STRICT = False
 
-# XXX: still used?
-REPLACEMENTS = OrderedDict([(r"&amp;[lr]squo;", "'"),
-                            (r"&amp;[lr]dquo;", '"'),
-                            (r"&amp;gt;", ">"),
-                            (r"&amp;lt;", "<")])
+re_stars = re.compile(r"^(?P<stars>\**) *(?P<comment>.*)$")
 
 
-def pdfcomments(infilename: str, outfilename: str = None):
-    if outfilename is None:
-        outfilename = extsep.join([Path(infilename).namebase, OUT_EXT])
+def load_comments(infilename: str) -> LevelsDict:
+    res = defaultdict(list)
 
     reader = PdfFileReader(infilename, STRICT)
     for page_num, page in enumerate(reader.pages):
-        page_text = f"p{page_num+1}:"
-
         try:
             annot_indirects = page["/Annots"]
         except KeyError:
@@ -48,8 +45,36 @@ def pdfcomments(infilename: str, outfilename: str = None):
             except KeyError:
                 continue
 
-            print(page_text, contents)
-            # XXX: open outputfile, print there
+            m_stars = re_stars.match(contents)
+            stars = m_stars["stars"]
+            comment = m_stars["comment"]
+
+            level = len(stars)
+
+            res[level].append(f"p{page_num+1}: {comment}")
+
+    return res
+
+
+def save_comments(levels: LevelsDict, outfilename: str) -> None:
+    with open(outfilename, "w") as outfile:
+        for level in sorted(levels, reverse=True):
+            print("Comments, level", level, file=outfile)
+            print(file=outfile)
+
+            for comment in levels[level]:
+                print(comment, file=outfile)
+
+            print(file=outfile)
+
+
+def pdfcomments(infilename: str, outfilename: str = None) -> None:
+    levels = load_comments(infilename)
+
+    if outfilename is None:
+        outfilename = extsep.join([Path(infilename).namebase, OUT_EXT])
+
+    return save_comments(levels, outfilename)
 
 
 def parse_args(args: List[str]) -> Namespace:
