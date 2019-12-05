@@ -7,49 +7,81 @@ __version__ = "0.1"
 # Copyright 2018, 2019 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
 from argparse import Namespace
-from collections import OrderedDict
+from collections import defaultdict
 from os import extsep
-from re import compile as re_compile, DOTALL, escape, MULTILINE
-from subprocess import run
+import re
 import sys
-from typing import List, Optional
+from typing import DefaultDict, List, Optional
 
 from path import Path
-from pkg_resources import resource_filename
 
-ENCODING = "utf-8"
-STYLESHEET_RESOURCENAME = "data/pdfcomments.xsl"
+from PyPDF2 import PdfFileReader
+
+# key: int (number of stars)
+# value: list of strs
+LevelsDict = DefaultDict[int, List[str]]
+
 OUT_EXT = "txt"
+STRICT = False
 
-pattern_encoded_xhtml_start = escape(r"&lt;?xml version='1.0'?&gt;&lt;body xmlns='http://www.w3.org/1999/xhtml' xmlns:xfa='http://www.xfa.org/schema/xfa-data/1.0/' xfa:APIVersion='Acrobat:10.1.2' xfa:spec='2.0.2'&gt;&lt;p dir='ltr' style='color: #ff0000'&gt;&lt;span&gt;")  # noqa
-pattern_encoded_xhtml_end = escape(r"&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;")
+LEVEL_NAMES = {0: "Minor comments",
+               1: "Major comments"}
 
-pattern_encoded_xhtml = \
-    f"{pattern_encoded_xhtml_start}(.*?){pattern_encoded_xhtml_end}"
-re_encoded_xhtml = re_compile(pattern_encoded_xhtml, MULTILINE | DOTALL)
-
-REPLACEMENTS = OrderedDict([(r"&amp;[lr]squo;", "'"),
-                            (r"&amp;[lr]dquo;", '"'),
-                            (r"&amp;gt;", ">"),
-                            (r"&amp;lt;", "<")])
+re_stars = re.compile(r"^(?P<stars>\**) *(?P<comment>.*)$")
 
 
-def pdfcomments(infilename: str, outfilename: str = None):
+def load_comments(infilename: str) -> LevelsDict:
+    res = defaultdict(list)
+
+    reader = PdfFileReader(infilename, STRICT)
+    for page_num, page in enumerate(reader.pages):
+        try:
+            annot_indirects = page["/Annots"]
+        except KeyError:
+            continue
+
+        for annot_indirect in annot_indirects:
+            annot = annot_indirect.getObject()
+
+            try:
+                contents = annot["/Contents"]
+            except KeyError:
+                continue
+
+            m_stars = re_stars.match(contents)
+            stars = m_stars["stars"]
+            comment = m_stars["comment"]
+
+            level = len(stars)
+
+            res[level].append(f"p{page_num+1}: {comment}")
+
+    return res
+
+
+def get_level_name(level: int) -> str:
+    return LEVEL_NAMES.get(level, f"Comments, level {level}")
+
+
+def save_comments(levels: LevelsDict, outfilename: str) -> None:
+    with open(outfilename, "w") as outfile:
+        for level in sorted(levels, reverse=True):
+            print(get_level_name(level), ":", sep="", file=outfile)
+            print(file=outfile)
+
+            for comment in levels[level]:
+                print(comment, file=outfile)
+
+            print(file=outfile)
+
+
+def pdfcomments(infilename: str, outfilename: str = None) -> None:
+    levels = load_comments(infilename)
+
     if outfilename is None:
         outfilename = extsep.join([Path(infilename).namebase, OUT_EXT])
 
-    with open(infilename) as infile:
-        text = infile.read()
-
-    text_clean = re_encoded_xhtml.sub(r"\1", text)
-    for pattern, repl in REPLACEMENTS.items():
-        text_clean = re_compile(pattern).sub(repl, text_clean)
-
-    bytes_clean = text_clean.encode(ENCODING)
-
-    stylesheet_filename = resource_filename(__name__, STYLESHEET_RESOURCENAME)
-    run(["xsltproc", "-o", outfilename, stylesheet_filename, "-"],
-        input=bytes_clean, check=True)
+    return save_comments(levels, outfilename)
 
 
 def parse_args(args: List[str]) -> Namespace:
@@ -57,7 +89,7 @@ def parse_args(args: List[str]) -> Namespace:
 
     description = __doc__.splitlines()[0].partition(": ")[2]
     parser = ArgumentParser(description=description)
-    parser.add_argument("infile", help="input file in xfdf format")
+    parser.add_argument("infile", help="input file in PDF format")
     parser.add_argument("outfile", nargs="?",
                         help="output file"
                         " (default: infile with extension changed to 'txt')")
