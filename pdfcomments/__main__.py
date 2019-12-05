@@ -7,7 +7,7 @@ __version__ = "0.1"
 # Copyright 2018, 2019 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
 from argparse import Namespace
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from os import extsep
 import re
 import sys
