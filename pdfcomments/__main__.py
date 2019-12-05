@@ -24,6 +24,9 @@ LevelsDict = DefaultDict[int, List[str]]
 OUT_EXT = "txt"
 STRICT = False
 
+LEVEL_NAMES = {0: "Minor comments",
+               1: "Major comments"}
+
 re_stars = re.compile(r"^(?P<stars>\**) *(?P<comment>.*)$")
 
 
@@ -56,10 +59,14 @@ def load_comments(infilename: str) -> LevelsDict:
     return res
 
 
+def get_level_name(level: int) -> str:
+    return LEVEL_NAMES.get(level, f"Comments, level {level}")
+
+
 def save_comments(levels: LevelsDict, outfilename: str) -> None:
     with open(outfilename, "w") as outfile:
         for level in sorted(levels, reverse=True):
-            print("Comments, level", level, file=outfile)
+            print(get_level_name(level), ":", sep="", file=outfile)
             print(file=outfile)
 
             for comment in levels[level]:
