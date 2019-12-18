@@ -9,7 +9,6 @@ setup(name='pdfcomments',
       author_email='michael.hoffman@utoronto.ca',
       license='GPLv3',
       packages=['pdfcomments'],
-      package_data={'pdfcomments': ['data/*']},
       install_requires=['PyPDF2'],
       python_requires='>=3.6',
       entry_points={
