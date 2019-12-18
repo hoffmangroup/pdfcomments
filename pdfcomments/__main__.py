@@ -9,11 +9,10 @@ __version__ = "0.1"
 from argparse import Namespace
 from collections import defaultdict
 from os import extsep
+from pathlib import Path
 import re
 import sys
 from typing import DefaultDict, List, Optional
-
-from path import Path
 
 from PyPDF2 import PdfFileReader
 
@@ -79,7 +78,7 @@ def pdfcomments(infilename: str, outfilename: str = None) -> None:
     levels = load_comments(infilename)
 
     if outfilename is None:
-        outfilename = extsep.join([Path(infilename).namebase, OUT_EXT])
+        outfilename = extsep.join([Path(infilename).stem, OUT_EXT])
 
     return save_comments(levels, outfilename)
 
