@@ -12,9 +12,9 @@ from os import extsep
 from pathlib import Path
 import re
 import sys
-from typing import DefaultDict, List, Optional
+from typing import DefaultDict, Iterator, List, Optional
 
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PageObject, PdfFileReader
 
 # key: int (number of stars)
 # value: list of strs
@@ -26,34 +26,42 @@ STRICT = False
 LEVEL_NAMES = {0: "Minor comments",
                1: "Major comments"}
 
-re_stars = re.compile(r"^(?P<stars>\**) *(?P<comment>.*)$")
+re_stars = re.compile(
+    r"""^
+    (?P<stars>\**)
+    \s*
+    (?P<comment>.*)
+    $""", re.VERBOSE)
 
 
-def load_comments(infilename: str) -> LevelsDict:
-    res = defaultdict(list)
+def iter_annot_contents(page: PageObject) -> Iterator[str]:
+    try:
+        annot_indirects = page.annots["/Annots"]
+    except KeyError:
+        return
 
-    reader = PdfFileReader(infilename, STRICT)
-    for page_num, page in enumerate(reader.pages):
+    for annot_indirect in annot_indirects:
+        annot = annot_indirect.getObject()
+
         try:
-            annot_indirects = page["/Annots"]
+            yield annot["/Contents"]
         except KeyError:
             continue
 
-        for annot_indirect in annot_indirects:
-            annot = annot_indirect.getObject()
+def load_comments(filename: str) -> LevelsDict:
+    res = defaultdict(list)
 
-            try:
-                contents = annot["/Contents"]
-            except KeyError:
-                continue
-
+    reader = PdfFileReader(filename, STRICT)
+    for page_num, page in enumerate(reader.pages, 1):
+        for contents in iter_annot_contents(page):
             m_stars = re_stars.match(contents)
             stars = m_stars["stars"]
             comment = m_stars["comment"]
 
+            # number of stars
             level = len(stars)
 
-            res[level].append(f"p{page_num+1}: {comment}")
+            res[level].append(f"p{page_num}: {comment}")
 
     return res
 
@@ -62,15 +70,13 @@ def get_level_name(level: int) -> str:
     return LEVEL_NAMES.get(level, f"Comments, level {level}")
 
 
-def save_comments(levels: LevelsDict, outfilename: str) -> None:
-    with open(outfilename, "w") as outfile:
+def save_comments(levels: LevelsDict, filename: str) -> None:
+    with open(filename, "w") as outfile:
         for level in sorted(levels, reverse=True):
             print(get_level_name(level), ":", sep="", file=outfile)
+
             print(file=outfile)
-
-            for comment in levels[level]:
-                print(comment, file=outfile)
-
+            print(*levels[level], sep="\n", file=outfile)
             print(file=outfile)
 
 
