@@ -8,13 +8,15 @@ __version__ = "0.1"
 
 from argparse import Namespace
 from collections import defaultdict
+from io import TextIOBase
 from os import extsep
 from pathlib import Path
 import re
 import sys
 from typing import DefaultDict, Iterator, List, Optional
 
-from PyPDF2 import PageObject, PdfFileReader
+from PyPDF2 import PdfFileReader
+from PyPDF2.pdf import PageObject
 
 # key: int (number of stars)
 # value: list of strs
@@ -48,6 +50,7 @@ def iter_annot_contents(page: PageObject) -> Iterator[str]:
         except KeyError:
             continue
 
+
 def load_comments(filename: str) -> LevelsDict:
     res = defaultdict(list)
 
@@ -70,18 +73,18 @@ def get_level_name(level: int) -> str:
     return LEVEL_NAMES.get(level, f"Comments, level {level}")
 
 
-def write_comments(level: int, comments: List[str]) -> None:
-    print(get_level_name(level), ":", sep="", file=outfile)
+def write_comments(level: int, comments: List[str], file: TextIOBase) -> None:
+    print(get_level_name(level), ":", sep="", file=file)
 
-    print(file=outfile)
-    print(*comments, sep="\n", file=outfile)
-    print(file=outfile)
+    print(file=file)
+    print(*comments, sep="\n", file=file)
+    print(file=file)
 
 
 def save_comments(levels: LevelsDict, filename: str) -> None:
-    with open(filename, "w") as outfile:
+    with open(filename, "w") as file:
         for level, comments in sorted(levels.items(), reverse=True):
-            write_comments(level, comments)
+            write_comments(level, comments, file)
 
 
 def pdfcomments(infilename: str, outfilename: str = None) -> None:
