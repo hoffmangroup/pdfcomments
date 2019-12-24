@@ -36,7 +36,7 @@ re_stars = re.compile(
 
 def iter_annot_contents(page: PageObject) -> Iterator[str]:
     try:
-        annot_indirects = page.annots["/Annots"]
+        annot_indirects = page["/Annots"]
     except KeyError:
         return
 
@@ -70,14 +70,18 @@ def get_level_name(level: int) -> str:
     return LEVEL_NAMES.get(level, f"Comments, level {level}")
 
 
+def write_comments(level: int, comments: List[str]) -> None:
+    print(get_level_name(level), ":", sep="", file=outfile)
+
+    print(file=outfile)
+    print(*comments, sep="\n", file=outfile)
+    print(file=outfile)
+
+
 def save_comments(levels: LevelsDict, filename: str) -> None:
     with open(filename, "w") as outfile:
-        for level in sorted(levels, reverse=True):
-            print(get_level_name(level), ":", sep="", file=outfile)
-
-            print(file=outfile)
-            print(*levels[level], sep="\n", file=outfile)
-            print(file=outfile)
+        for level, comments in sorted(levels.items(), reverse=True):
+            write_comments(level, comments)
 
 
 def pdfcomments(infilename: str, outfilename: str = None) -> None:
