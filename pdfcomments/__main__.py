@@ -112,7 +112,7 @@ def parse_args(args: List[str]) -> Namespace:
     return parser.parse_args(args)
 
 
-def main(argv: List[str] = sys.argv[1:]) -> Optional[int]:
+def main(argv: List[str] = sys.argv[1:]) -> None:
     args = parse_args(argv)
 
     return pdfcomments(args.infile, args.outfile)
