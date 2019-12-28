@@ -12,7 +12,7 @@ from os import extsep, EX_OK
 from pathlib import Path
 import re
 import sys
-from typing import DefaultDict, Iterator, List, Optional, TextIO
+from typing import DefaultDict, Iterator, List, TextIO
 
 from PyPDF2 import PdfFileReader
 from PyPDF2.pdf import PageObject
@@ -57,7 +57,7 @@ def load_comments(filename: str) -> LevelsDict:
     for page_num, page in enumerate(reader.pages, 1):
         for contents in iter_annot_contents(page):
             m_stars = re_stars.match(contents)
-            assert m_stars is not None # should always match
+            assert m_stars is not None  # should always match
 
             stars = m_stars["stars"]
             comment = m_stars["comment"]
