@@ -8,12 +8,11 @@ __version__ = "0.1"
 
 from argparse import Namespace
 from collections import defaultdict
-from io import TextIOBase
-from os import extsep
+from os import extsep, EX_OK
 from pathlib import Path
 import re
 import sys
-from typing import DefaultDict, Iterator, List, Optional
+from typing import DefaultDict, Iterator, List, Optional, TextIO
 
 from PyPDF2 import PdfFileReader
 from PyPDF2.pdf import PageObject
@@ -52,12 +51,14 @@ def iter_annot_contents(page: PageObject) -> Iterator[str]:
 
 
 def load_comments(filename: str) -> LevelsDict:
-    res = defaultdict(list)
+    res: LevelsDict = defaultdict(list)
 
     reader = PdfFileReader(filename, STRICT)
     for page_num, page in enumerate(reader.pages, 1):
         for contents in iter_annot_contents(page):
             m_stars = re_stars.match(contents)
+            assert m_stars is not None # should always match
+
             stars = m_stars["stars"]
             comment = m_stars["comment"]
 
@@ -73,7 +74,7 @@ def get_level_name(level: int) -> str:
     return LEVEL_NAMES.get(level, f"Comments, level {level}")
 
 
-def write_comments(level: int, comments: List[str], file: TextIOBase) -> None:
+def write_comments(level: int, comments: List[str], file: TextIO) -> None:
     print(get_level_name(level), ":", sep="", file=file)
 
     print(file=file)
@@ -87,13 +88,15 @@ def save_comments(levels: LevelsDict, filename: str) -> None:
             write_comments(level, comments, file)
 
 
-def pdfcomments(infilename: str, outfilename: str = None) -> None:
+def pdfcomments(infilename: str, outfilename: str = None) -> int:
     levels = load_comments(infilename)
 
     if outfilename is None:
         outfilename = extsep.join([Path(infilename).stem, OUT_EXT])
 
-    return save_comments(levels, outfilename)
+    save_comments(levels, outfilename)
+
+    return EX_OK
 
 
 def parse_args(args: List[str]) -> Namespace:
@@ -112,7 +115,7 @@ def parse_args(args: List[str]) -> Namespace:
     return parser.parse_args(args)
 
 
-def main(argv: List[str] = sys.argv[1:]) -> None:
+def main(argv: List[str] = sys.argv[1:]) -> int:
     args = parse_args(argv)
 
     return pdfcomments(args.infile, args.outfile)
