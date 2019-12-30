@@ -12,7 +12,7 @@ from os import extsep, EX_OK
 from pathlib import Path
 import re
 import sys
-from typing import DefaultDict, Iterator, List, TextIO
+from typing import DefaultDict, Iterator, List, Optional, TextIO
 
 from PyPDF2 import PdfFileReader
 from PyPDF2.pdf import PageObject
@@ -88,7 +88,7 @@ def save_comments(levels: LevelsDict, filename: str) -> None:
             write_comments(level, comments, file)
 
 
-def pdfcomments(infilename: str, outfilename: str = None) -> int:
+def pdfcomments(infilename: str, outfilename: Optional[str] = None) -> int:
     levels = load_comments(infilename)
 
     if outfilename is None:
