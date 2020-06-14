@@ -9,9 +9,9 @@ You can specify a major comment by adding an asterisk at its beginning.
 ## Example output
 
 Say you have `test.pdf` and you add the following comments with Acrobat Reader, PDFExpert, or your annotation tool of choice:
-- page 1: a text comment, “Text is unclear.”
-- page 2: a sticky note, “Sticky note!”
-- page 2: a text comment, “* Important comment.”
+- page 1: a text comment, `Text is unclear.`
+- page 2: a sticky note, `Sticky note.`
+- page 2: a text comment, `* Important comment.`
 
 Run `pdfcomments test.pdf` and it will produce the following output file:
 
@@ -23,13 +23,13 @@ p2: Important comment.
 Minor comments:
 
 p1: Text is unclear.
-p2: Sticky note!
+p2: Sticky note.
 ```
 
 ## Prerequisites
 
-Python >=3.6
-PyPDF2 (installed automatically by `pip`)
+- Python >=3.6
+- PyPDF2 (installed automatically by `pip`)
 
 ## Installation
 
