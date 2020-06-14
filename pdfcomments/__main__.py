@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""__init__.py: extract comments from PDF
+"""__main__.py: extract comments from PDF
 """
 
 __version__ = "0.1"
@@ -30,15 +30,15 @@ generic._pdfDocEncoding = tuple(PDF_DOC_ENCODING)
 
 # key: int (number of stars)
 # value: list of strs
-LevelsDict = DefaultDict[int, List[str]]
+SeverityDict = DefaultDict[int, List[str]]
 
 ENCODING = "utf-8"
 
 OUT_EXT = "txt"
 STRICT = False
 
-LEVEL_NAMES = {0: "Minor comments",
-               1: "Major comments"}
+SEVERITY_NAMES = {0: "Minor comments",
+                  1: "Major comments"}
 
 re_stars = re.compile(
     r"""^
@@ -63,8 +63,8 @@ def iter_annot_contents(page: PageObject) -> Iterator[str]:
             continue
 
 
-def load_comments(filename: str) -> LevelsDict:
-    res: LevelsDict = defaultdict(list)
+def load_comments(filename: str) -> SeverityDict:
+    res: SeverityDict = defaultdict(list)
 
     reader = PdfFileReader(filename, STRICT)
     for page_num, page in enumerate(reader.pages, 1):
@@ -76,38 +76,38 @@ def load_comments(filename: str) -> LevelsDict:
             comment = m_stars["comment"]
 
             # number of stars
-            level = len(stars)
+            severity = len(stars)
 
-            res[level].append(f"p{page_num}: {comment}")
+            res[severity].append(f"p{page_num}: {comment}")
 
     return res
 
 
-def get_level_name(level: int) -> str:
-    return LEVEL_NAMES.get(level, f"Comments, level {level}")
+def get_severity_name(severity: int) -> str:
+    return SEVERITY_NAMES.get(severity, f"Comments, severity {severity}")
 
 
-def write_comments(level: int, comments: List[str], file: TextIO) -> None:
-    print(get_level_name(level), ":", sep="", file=file)
+def write_comments(severity: int, comments: List[str], file: TextIO) -> None:
+    print(get_severity_name(severity), ":", sep="", file=file)
 
     print(file=file)
     print(*comments, sep="\n", file=file)
     print(file=file)
 
 
-def save_comments(levels: LevelsDict, filename: str) -> None:
+def save_comments(severities: SeverityDict, filename: str) -> None:
     with open(filename, "w") as file:
-        for level, comments in sorted(levels.items(), reverse=True):
-            write_comments(level, comments, file)
+        for severity, comments in sorted(severities.items(), reverse=True):
+            write_comments(severity, comments, file)
 
 
 def pdfcomments(infilename: str, outfilename: Optional[str] = None) -> int:
-    levels = load_comments(infilename)
+    severities = load_comments(infilename)
 
     if outfilename is None:
         outfilename = extsep.join([Path(infilename).stem, OUT_EXT])
 
-    save_comments(levels, outfilename)
+    save_comments(severities, outfilename)
 
     return EX_OK
 
@@ -117,9 +117,9 @@ def parse_args(args: List[str]) -> Namespace:
 
     description = __doc__.splitlines()[0].partition(": ")[2]
     parser = ArgumentParser(description=description)
-    parser.add_argument("infile", help="input file in PDF format")
+    parser.add_argument("infile", help="input PDF file")
     parser.add_argument("outfile", nargs="?",
-                        help="output file"
+                        help="output text file"
                         " (default: infile with extension changed to 'txt')")
 
     version = f"%(prog)s {__version__}"
