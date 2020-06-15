@@ -8,7 +8,11 @@ __version__ = "0.1"
 
 from argparse import Namespace
 from collections import defaultdict
-from os import extsep, EX_OK
+from os import extsep
+try:
+    from os import EX_OK
+except ImportError:
+    EX_OK = 0
 from pathlib import Path
 import re
 import sys
