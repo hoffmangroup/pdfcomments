@@ -3,7 +3,7 @@
 pdfcomments extracts comments from a PDF and puts them in a text file.
 It is most useful for turning text comments and sticky notes into a list of comments with page numbers.
 
-By default all comments are minor.
+By default, all comments are minor.
 You can specify a major comment by adding an asterisk at its beginning.
 
 ## Example output
@@ -13,7 +13,7 @@ Say you have `test.pdf` and you add the following comments with Acrobat Reader, 
 - page 2: a sticky note, `Sticky note.`
 - page 2: a text comment, `* Important comment.`
 
-Run `pdfcomments test.pdf` and it will produce the following output file:
+Run `pdfcomments test.pdf` and it will produce the following output file `test.txt`:
 
 ```text
 Major comments:
@@ -34,7 +34,7 @@ p2: Sticky note.
 ## Installation
 
 ```sh
-python -m pip install pdfcomments@https://codeload.github.com/hoffmangroup/pdfcomments/zip/master
+python -m pip install pdfcomments
 ```
 
 Replace `python` with whatever command runs a version that is of Python 3.6 or greater.
