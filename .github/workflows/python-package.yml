@@ -10,11 +10,11 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  build-unix:
 
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        os: ["ubuntu-latest", "macos-latest"]
         python-version: [3.6, 3.7, 3.8]
 
     runs-on: "${{ matrix.os }}"
@@ -29,6 +29,34 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pep8-naming flake8-docstrings flake8-mypy mypy
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --statistics
+
+  build-windows:
+    # remove flake8-mypy to avoid its bug:
+    # `re.error: incomplete escape \U at position 72 (line 4, column 3)`
+
+    strategy:
+      matrix:
+        os: ["windows-latest"]
+        python-version: [3.6, 3.7, 3.8]
+
+    runs-on: "${{ matrix.os }}"
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pep8-naming flake8-docstrings
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
