@@ -9,10 +9,6 @@ __version__ = "0.1"
 from argparse import Namespace
 from collections import defaultdict
 from os import extsep
-try:
-    from os import EX_OK
-except ImportError:
-    EX_OK = 0
 from pathlib import Path
 import re
 import sys
@@ -20,6 +16,11 @@ from typing import DefaultDict, Iterator, List, Optional, TextIO
 
 from PyPDF2 import PdfFileReader
 from PyPDF2.pdf import PageObject
+
+try:
+    from os import EX_OK
+except ImportError:
+    EX_OK = 0
 
 # monkey-patching to fix
 # https://github.com/mstamy2/PyPDF2/issues/151
