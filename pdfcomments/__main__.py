@@ -6,21 +6,17 @@ __version__ = "0.1"
 
 # Copyright 2018-2020 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
-from argparse import Namespace
+import argparse
 from collections import defaultdict
-from os import extsep
 from pathlib import Path
 import re
 import sys
-from typing import DefaultDict, Iterator, List, Optional, TextIO
+from typing import DefaultDict, Iterator, List, TextIO
 
 from PyPDF2 import PdfFileReader
 from PyPDF2.pdf import PageObject
+from PyPDF2.utils import PdfReadError
 
-try:
-    from os import EX_OK
-except ImportError:
-    EX_OK = 0
 
 # monkey-patching to fix
 # https://github.com/mstamy2/PyPDF2/issues/151
@@ -39,18 +35,18 @@ SeverityDict = DefaultDict[int, List[str]]
 
 ENCODING = "utf-8"
 
-OUT_EXT = "txt"
 STRICT = False
 
-SEVERITY_NAMES = {0: "Minor comments",
-                  1: "Major comments"}
+SEVERITY_NAMES = {0: "Minor comments", 1: "Major comments"}
 
 re_stars = re.compile(
     r"""^
     (?P<stars>\**)
     \s*
     (?P<comment>.*)
-    $""", re.DOTALL | re.VERBOSE)
+    $""",
+    re.DOTALL | re.VERBOSE,
+)
 
 
 def iter_annot_contents(page: PageObject) -> Iterator[str]:
@@ -74,10 +70,9 @@ def iter_annot_contents(page: PageObject) -> Iterator[str]:
             yield annot
 
 
-def load_comments(filename: str) -> SeverityDict:
+def load_comments(reader: PdfFileReader) -> SeverityDict:
     res: SeverityDict = defaultdict(list)
 
-    reader = PdfFileReader(filename, STRICT)
     for page_num, page in enumerate(reader.pages, 1):
         for contents in iter_annot_contents(page):
             m_stars = re_stars.match(contents)
@@ -112,37 +107,55 @@ def save_comments(severities: SeverityDict, filename: str) -> None:
             write_comments(severity, comments, file)
 
 
-def pdfcomments(infilename: str, outfilename: Optional[str] = None) -> int:
-    severities = load_comments(infilename)
+def pdf_file_type(fp: str) -> str:
+    fp = Path(fp)
+    if not fp.is_file():
+        msg = f"{str(fp)!r} is not a file"
+        raise argparse.ArgumentTypeError(msg)
+    # Cheap check to see if we have a PDF
+    # with fp.open("rb") as fh:
+    #     if fh.read(5) != b"%PDF-":
+    #         msg = f"{str(fp)!r} doesn't appear to be a pdf"
+    #         raise argparse.ArgumentTypeError(msg)
 
-    if outfilename is None:
-        outfilename = extsep.join([Path(infilename).stem, OUT_EXT])
-
-    save_comments(severities, outfilename)
-
-    return EX_OK
+    return str(fp)
 
 
-def parse_args(args: List[str]) -> Namespace:
-    from argparse import ArgumentParser
-
+def get_parser() -> argparse.ArgumentParser:
     description = __doc__.splitlines()[0].partition(": ")[2]
-    parser = ArgumentParser(description=description)
-    parser.add_argument("infile", help="input PDF file")
-    parser.add_argument("outfile", nargs="?",
-                        help="output text file"
-                        " (default: infile with extension changed to 'txt')")
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        "infile", help="input PDF file", type=pdf_file_type,
+    )
+    parser.add_argument(
+        "outfile",
+        nargs="?",
+        help="output text file (default: infile with extension changed to 'txt')",
+        default=None,
+    )
 
     version = f"%(prog)s {__version__}"
     parser.add_argument("--version", action="version", version=version)
 
-    return parser.parse_args(args)
+    return parser
 
 
-def main(argv: List[str] = sys.argv[1:]) -> int:
-    args = parse_args(argv)
+def main(argv: List[str] = None) -> int:
+    parser = get_parser()
+    args = parser.parse_args(argv)
 
-    return pdfcomments(args.infile, args.outfile)
+    if args.outfile is None:
+        # This will output the file in the working directory
+        args.outfile = str(Path(args.infile).with_suffix(".txt").name)
+
+    try:
+        pdf = PdfFileReader(args.infile, STRICT)
+    except PdfReadError as e:
+        parser.error(e)
+
+    severities = load_comments(pdf)
+
+    save_comments(severities, args.outfile)
 
 
 if __name__ == "__main__":
