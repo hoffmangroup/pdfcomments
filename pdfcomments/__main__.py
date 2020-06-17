@@ -54,18 +54,24 @@ re_stars = re.compile(
 
 
 def iter_annot_contents(page: PageObject) -> Iterator[str]:
-    try:
-        annot_indirects = page["/Annots"]
-    except KeyError:
+    if "/Annots" not in page.keys():
         return
 
-    for annot_indirect in annot_indirects:
-        annot = annot_indirect.getObject()
-
-        try:
-            yield annot["/Contents"]
-        except KeyError:
+    for indirect in page["/Annots"]:
+        obj = indirect.getObject()
+        if "popup" in obj.get("/Subtype", "").lower():
             continue
+        annot = obj.get("/Contents", "")
+        if not isinstance(annot, str):
+            for enc in ["utf-8", "utf-16"]:
+                try:
+                    annot = annot.decode(enc)
+                except UnicodeDecodeError:
+                    continue
+                break
+
+        if annot and isinstance(annot, str):
+            yield annot
 
 
 def load_comments(filename: str) -> SeverityDict:
