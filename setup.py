@@ -2,9 +2,13 @@
 
 from setuptools import setup
 
+version = {}
+with open("pdfcomments/_version.py") as fh:
+    exec(fh.read(), version)
+
 setup(
     name="pdfcomments",
-    version="0.1",
+    version=version["__version__"],
     description="extract comments from PDF",
     author="Michael Hoffman",
     author_email="michael.hoffman@utoronto.ca",

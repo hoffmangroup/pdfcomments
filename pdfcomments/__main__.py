@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """__main__.py: extract comments from PDF
 """
-
-__version__ = "0.1"
-
 # Copyright 2018-2020 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
 import argparse
@@ -17,6 +14,7 @@ from PyPDF2 import PdfFileReader
 from PyPDF2.pdf import PageObject
 from PyPDF2.utils import PdfReadError
 
+from pdfcomments._version import __version__
 
 # monkey-patching to fix
 # https://github.com/mstamy2/PyPDF2/issues/151
