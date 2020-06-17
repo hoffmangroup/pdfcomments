@@ -13,6 +13,7 @@ jobs:
         python-version: 3.8
     - name: Black format
       run: |
+        pip install black
         black -t py36 --check --diff **/*.py
 
   test:
