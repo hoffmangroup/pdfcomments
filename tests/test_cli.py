@@ -52,7 +52,7 @@ p2: Is this about bioinformaticians?
 
     def test_write_to_cwd(self):
         output = Path(self.test_pdf).with_suffix(".txt").name
-        opts = [self.test_pdf,]
+        opts = [self.test_pdf]
         main(opts)
         file_contents = open(output, "r").read()
         self.assertEqual(self.expected_out, file_contents)
