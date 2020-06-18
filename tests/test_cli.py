@@ -109,5 +109,5 @@ class TestCLI(unittest.TestCase):
         self.assertTrue(err.endswith("Encrypted PDFs are currently unsupported"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
