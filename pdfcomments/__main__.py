@@ -151,6 +151,9 @@ def main(argv: List[str] = None) -> int:
     except PdfReadError as e:
         parser.error(e)
 
+    if pdf.isEncrypted:
+        parser.error("Encrypted PDFs are currently unsupported")
+
     severities = load_comments(pdf)
 
     save_comments(severities, args.outfile)
