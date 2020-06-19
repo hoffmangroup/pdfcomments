@@ -28,13 +28,17 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pep8-naming flake8-docstrings flake8-mypy mypy
+        pip install flake8 pep8-naming flake8-docstrings flake8-mypy mypy pytest pytest-cov
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings
         flake8 . --count --exit-zero --max-complexity=10 --statistics
+    - name: pytest
+      run: |
+        python setup.py develop
+        pytest --cov=pdfcomments tests
 
   build-windows:
     # remove flake8-mypy to avoid its bug:
@@ -56,10 +60,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pep8-naming flake8-docstrings
+        pip install flake8 pep8-naming flake8-docstrings pytest pytest-cov
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings
         flake8 . --count --exit-zero --max-complexity=10 --statistics
+    - name: pytest
+      run: |
+        python setup.py develop
+        pytest --cov=pdfcomments tests
