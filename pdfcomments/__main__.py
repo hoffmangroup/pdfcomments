@@ -17,9 +17,9 @@ from typing import DefaultDict, Iterator, List, Optional, TextIO
 from PyPDF2 import PageObject, PdfReader
 
 try:
-    from os import EX_OK
+    from os import EX_OK  # type: ignore[attr-defined]
 except ImportError:
-    EX_OK = 0
+    EX_OK = 0  # XXX: no longer necessary in Python >=3.11
 
 # key: int (number of stars)
 # value: list of strs
