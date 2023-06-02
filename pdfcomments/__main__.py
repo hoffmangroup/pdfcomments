@@ -4,7 +4,7 @@
 
 __version__ = "0.1"
 
-# Copyright 2018-2020 Michael M. Hoffman <michael.hoffman@utoronto.ca>
+# Copyright 2018-2020, 2023 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
 from argparse import Namespace
 from collections import defaultdict
@@ -21,17 +21,6 @@ try:
     from os import EX_OK
 except ImportError:
     EX_OK = 0
-
-# monkey-patching to fix
-# https://github.com/mstamy2/PyPDF2/issues/151
-from PyPDF2 import generic
-
-PDF_DOC_ENCODING = list(generic._pdfDocEncoding)
-PDF_DOC_ENCODING[9] = "\u0009"
-PDF_DOC_ENCODING[10] = "\u000a"
-PDF_DOC_ENCODING[13] = "\u000d"
-
-generic._pdfDocEncoding = tuple(PDF_DOC_ENCODING)
 
 # key: int (number of stars)
 # value: list of strs
