@@ -14,8 +14,7 @@ import re
 import sys
 from typing import DefaultDict, Iterator, List, Optional, TextIO
 
-from PyPDF2 import PdfFileReader
-from PyPDF2.pdf import PageObject
+from PyPDF2 import PageObject, PdfReader
 
 try:
     from os import EX_OK
@@ -43,13 +42,12 @@ re_stars = re.compile(
 
 
 def iter_annot_contents(page: PageObject) -> Iterator[str]:
-    try:
-        annot_indirects = page["/Annots"]
-    except KeyError:
+    annot_indirects = page.annotations
+    if annot_indirects is None:
         return
 
     for annot_indirect in annot_indirects:
-        annot = annot_indirect.getObject()
+        annot = annot_indirect.get_object()
 
         try:
             yield annot["/Contents"]
@@ -60,7 +58,7 @@ def iter_annot_contents(page: PageObject) -> Iterator[str]:
 def load_comments(filename: str) -> SeverityDict:
     res: SeverityDict = defaultdict(list)
 
-    reader = PdfFileReader(filename, STRICT)
+    reader = PdfReader(filename, STRICT)
 
     # In enumerate(reader.pages, 1), the 1 makes pages printed 1-based instead
     # of 0-based, as is used by all user-facing PDF software
