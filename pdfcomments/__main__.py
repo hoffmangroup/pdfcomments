@@ -72,7 +72,10 @@ def load_comments(filename: str) -> SeverityDict:
     res: SeverityDict = defaultdict(list)
 
     reader = PdfFileReader(filename, STRICT)
-    for page_num, page in enumerate(reader.pages, 1):
+
+    # In enumerate(reader.pages, 1), the 1 makes pages printed 1-based instead
+    # of 0-based, as is used by all user-facing PDF software
+    for page_num_1based, page in enumerate(reader.pages, 1):
         for contents in iter_annot_contents(page):
             m_stars = re_stars.match(contents)
             assert m_stars is not None  # should always match
@@ -83,7 +86,7 @@ def load_comments(filename: str) -> SeverityDict:
             # number of stars
             severity = len(stars)
 
-            res[severity].append(f"p{page_num}: {comment}")
+            res[severity].append(f"p{page_num_1based}: {comment}")
 
     return res
 
